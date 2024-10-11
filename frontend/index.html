@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marketplace</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.0.0/dist/ethers.min.js"></script>
+  </head>
+  <body>
+    <h1>Marketplace</h1>
+
+    <button id="connectWallet">Connect Wallet</button>
+    <div id="walletAddress"></div>
+
+    <h2>List Item</h2>
+    <input type="text" id="itemPrice" placeholder="Price in ETH" />
+    <button id="listItem">List Item</button>
+
+    <h2>Buy Item</h2>
+    <input type="number" id="itemId" placeholder="Item ID" />
+    <button id="buyItem">Buy Item</button>
+
+    <script>
+      let signer, marketplaceContract;
+      const marketplaceAddress = "YOUR_CONTRACT_ADDRESS"; // Replace with deployed contract address
+      const marketplaceABI = [
+        // ABI of your contract
+        // Shortened for simplicity
+        "function listItem(uint256 price)",
+        "function buyItem(uint256 id) payable",
+        "function getItem(uint256 id) view returns (uint256, address, uint256, bool)",
+      ];
+
+      document.getElementById("connectWallet").onclick = async function () {
+        await ethereum.request({ method: "eth_requestAccounts" });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        document.getElementById("walletAddress").innerText =
+          await signer.getAddress();
+        marketplaceContract = new ethers.Contract(
+          marketplaceAddress,
+          marketplaceABI,
+          signer
+        );
+      };
+
+      document.getElementById("listItem").onclick = async function () {
+        const price = ethers.utils.parseEther(
+          document.getElementById("itemPrice").value
+        );
+        const tx = await marketplaceContract.listItem(price);
+        await tx.wait();
+        alert("Item listed!");
+      };
+
+      document.getElementById("buyItem").onclick = async function () {
+        const itemId = document.getElementById("itemId").value;
+        const item = await marketplaceContract.getItem(itemId);
+        const price = item[2];
+        const tx = await marketplaceContract.buyItem(itemId, { value: price });
+        await tx.wait();
+        alert("Item purchased!");
+      };
+    </script>
+  </body>
+</html>
